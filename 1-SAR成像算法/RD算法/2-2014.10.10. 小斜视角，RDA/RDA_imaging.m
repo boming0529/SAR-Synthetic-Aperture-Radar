@@ -116,34 +116,25 @@ for k = 1:3                 % 生成k个目标的原始回波数据
     w_azimuth = (abs(ta - nc_target(k)) <= (La/2)/Vr);    % 行向量
     w_azimuth = w_azimuth.'*ones(1,Nrg);    % 生成Naz*Nrg的矩阵
     %}
-% =====================================================================     
+    % =====================================================================     
     s_k = A0.*w_range.*w_azimuth.*exp(-(1j*4*pi*f0).*R_n./c).*exp((1j*pi*Kr).*(tau_mtx-2.*R_n./c).^2);  % (6.1)
-%     s_k = A0.*w_range.*w_azimuth1.*w_azimuth.*exp(-(1j*4*pi*f0).*R_n./c).*exp((1j*pi*Kr).*(tau_mtx-2.*R_n./c).^2);
+    % s_k = A0.*w_range.*w_azimuth1.*w_azimuth.*exp(-(1j*4*pi*f0).*R_n./c).*exp((1j*pi*Kr).*(tau_mtx-2.*R_n./c).^2);
     % 上式就是生成的某一个点目标（目标k）的回波信号。
+
     % 经过几次循环，生成几个点目标的回波信号，相加即可。
-    if k == 1
-        s_1 = s_k;          % 目标1的回波信号
-    end
-    if k == 2   
-        s_2 = s_k;          % 目标2的回波信号
-    end
-    if k == 3
-        s_3 = s_k;          % 目标3的回波信号
-    end
-    s_echo = s_echo + s_k;  % 所有点目标回波信号之和   
+    s_echo = s_echo + s_k;  % 所有目標點回波訊號之和   
 end
 % s_echo 就是我们需要的原始数据，点目标回波信号。
 
-% 作图
-% 图1——原始数据
+% 作圖
+% 圖一： 低斜視角情況下的三點雷達原始模擬訊號 (課本圖 6.3)
 figure;
 subplot(2,2,1);
 imagesc(real(s_echo));
 title('(a) 實部 Real Part');
 xlabel('Range Time Domain(Samples)');
 ylabel('Azimuth Time Domain(Samples)');
-text(280,-150,'圖一: 目標物 A 原始數據');       % 给图1进行文字说明 
-% text 函数：在图像的指定坐标位置，添加文本框
+text(280,-150,'圖一: 目標物 A 原始數據');     
 
 subplot(2,2,2);
 imagesc(imag(s_echo));
@@ -164,22 +155,6 @@ xlabel('Range Time Domain(Samples)');
 ylabel('Azimuth Time Domain(Samples)');
 % colormap(gray);
 
-
-figure;
-subplot(2,2,1);
-imagesc(abs(fft(s_echo,[],1)));
-title('RD 频谱幅度');
-subplot(2,2,2);
-imagesc(angle(fft(s_echo,[],1)));
-title('RD 频谱相位');
-subplot(2,2,3);
-imagesc(abs(fft2(s_echo)));
-title('二维频谱幅度');
-subplot(2,2,4);
-imagesc(angle(fft2(s_echo)));
-title('二维频谱相位');
-% colormap(gray);
-
 %%
 % --------------------------------------------------------------------
 % 6.3.2 Range Compression
@@ -187,7 +162,7 @@ title('二维频谱相位');
 S_range = fft(s_echo,NFFT_r,2);     % 进行距离向傅里叶变换，零频在两端。
 
 %
-% 作图
+% 作圖
 % 图2——距离频域，方位时域，频谱（未距离压缩）
 figure;
 subplot(1,2,1);
@@ -236,7 +211,7 @@ s_rc_c = s_rc(:,1:N_rg);                % 取前 N_rg列。
 % ====================================================
 
 %
-% 作图
+% 作圖
 % 图3——距离频域，方位时域，频谱（已距离压缩）
 figure;
 subplot(1,2,1);
@@ -254,16 +229,16 @@ xlabel('Range frequency Domain(Samples)');
 ylabel('Azimuth time Domain(Samples)');
 %}
 %
-% 作图
-% 图4——二维时域（完成距离压缩）
+
+% 作圖
+% 圖四 :Range Compressed Data (課本圖 6.4)
 figure;
 subplot(1,2,1);
 imagesc(real(s_rc_c));  %　这及其以下，都直接使用去除弃置区后的结果
 title('(a)實部');
 xlabel('Range Time Domain(Samples)');
 ylabel('Azimuth Time Domain(Samples)');
-text(130, -15,'圖四 : Range Compressed Data');       % 给图4进行文字说明
-% text(172,-10,'完成壓縮');       
+text(130, -15,'圖四 : Range Compressed Data');       % 完成壓縮
 
 subplot(1,2,2);
 imagesc(abs(s_rc_c));
@@ -334,43 +309,42 @@ for p = 1 : NFFT_a
 end
 % S_rd_rcmc 就是RCMC后的距离多普勒域频谱。
 
-% 作图
-% 图5——距离多普勒域（未RCMC）
+% 作圖
+% 圖5 : Range Dopper Domain（未RCMC）備註：課本沒有這張圖
 figure;
 subplot(1,2,1);
 imagesc(real(S_rd));
 title('(a)實部');
 xlabel('Range time Domain(Samples)');
 ylabel('Azimuth frequency Domain(Samples)');
-text(130,-10,'圖五 : Range Dopper Domain');
-% text(172,-10,'未RCMC');
+text(130,-10,'圖五 : Range Dopper Domain');   % 未RCMC
+
 subplot(1,2,2);
 imagesc(abs(S_rd));
 title('(b)幅度');
 xlabel('Range time Domain(Samples)');
 ylabel('Azimuth frequency Domain(Samples)');
 
-% 作图
-% 图6——距离多普勒域，RCMC后的结果
+% 作圖
+% 圖六： RCMC 後的模擬數據 (課本圖 6.9)
 figure;
 subplot(1,2,1);
 imagesc(real(S_rd_rcmc));
-title('（a）实部');
-xlabel('距离时域（采样点）');
-ylabel('方位频域（采样点）');
-text(150,-60,'图6，距离多普勒域');       % 给图6进行文字说明
-text(172,-10,'已RCMC');       
+title('(a)實部');
+xlabel('Range time Domain(Samples)');
+ylabel('Azimuth frequency Domain(Samples)');
+text(130,-10,'圖六 : RCMC 後的模擬數據');       % 已RCMC  
 
 subplot(1,2,2);
 imagesc(abs(S_rd_rcmc));
-title('（b）幅度');
-xlabel('距离时域（采样点）');
-ylabel('方位频域（采样点）');
+title('(b)幅度');
+xlabel('Range time Domain(Samples)');
+ylabel('Azimuth frequency Domain(Samples)');
 %}
 
 %%
 % --------------------------------------------------------------------
-% 方位压缩
+% 6.3.6 Azimuth Compression
 % --------------------------------------------------------------------
 fa_azimuth_MF = fa;         % 方位频率轴，采用和RCMC中所用的频率轴相同。
 Ka = 2*Vr^2*(cos(sita_r_c))^3./(lamda.* R0_RCMC);  	% 方位向调频率，是随最近斜距R0变化的。
