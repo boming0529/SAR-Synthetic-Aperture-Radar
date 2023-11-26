@@ -99,19 +99,19 @@ tau = 2*R0/c + ( -Nrg/2 : (Nrg/2-1) )/Fr;  % 距離時間軸,課本找不到(◕
 tau_mtx = ones(Naz,1)*tau;                 % 距離時間軸矩陣,矩陣大小：Naz*Nrg
 
 % 方位列矩陣
-ta = ( -Naz/2: Naz/2-1 )/Fa;               % 方位时间轴
+eta = ( -Naz/2: Naz/2-1 )/Fa;              % 方位时间轴
 % 生成方位矩陣
-ta_mtx = ta.'*ones(1,Nrg);                 % 方位時間轴矩陣,矩陣大小：Naz*Nrg
+eta_mtx = eta.'*ones(1,Nrg);               % 方位時間轴矩陣,矩陣大小：Naz*Nrg
 
 %% 
 % --------------------------------------------------------------------
 % 定義f_tau和f_eta矩陣
 % --------------------------------------------------------------------
-fr = ( -NFFT_r/2 : NFFT_r/2-1 )*( Fr/NFFT_r );          % 距离频率轴
-fr_mtx = ones(Naz,1)*fr;    % 距离频率轴矩阵，大小：Naz*Nrg
+fr = ( -NFFT_r/2 : NFFT_r/2-1 )*( Fr/NFFT_r );                 % 距离频率轴
+fr_mtx = ones(Naz,1)*fr;                                       % 距离频率轴矩阵，大小：Naz*Nrg
 
-fa = fnc + fftshift( -NFFT_a/2 : NFFT_a/2-1 )*( Fa/NFFT_a );	% 方位频率轴
-fa_mtx = fa.'*ones(1,Nrg);  % 方位频率轴矩阵，大小：Naz*Nrg
+fa = fnc + fftshift( -NFFT_a/2 : NFFT_a/2-1 )*( Fa/NFFT_a );   % 方位频率轴
+fa_mtx = fa.'*ones(1,Nrg);                                     % 方位频率轴矩阵，大小：Naz*Nrg
 
 %% 
 % --------------------------------------------------------------------------------------------------------
@@ -119,70 +119,53 @@ fa_mtx = fa.'*ones(1,Nrg);  % 方位频率轴矩阵，大小：Naz*Nrg
 % --------------------------------------------------------------------------------------------------------
 s_echo = zeros(Naz,Nrg);    % s_echo用来存放生成的回波(Raw Data)結果
 
-A0 = 1;                     % 目标回波幅度，都设置为1.
-for k = 1:3                 % 生成k个目标的原始回波数据
-    R_n = sqrt( (x_range(k).*ones(Naz,Nrg)).^2 + (Vr.*ta_mtx-y_azimuth(k).*ones(Naz,Nrg)).^2 );% 目标k的瞬时斜距
-    w_range = ((abs(tau_mtx-2.*R_n./c)) <= ((Tr/2).*ones(Naz,Nrg)));     % 距离向包络，即距离窗
-    % =====================================================================    
-    % 方位向包络，也就是 天线的双程方向图作用因子。
-    %{
-    % 方式1
-    % sinc平方型函数，根据公式（4.31）计算    
-    % 用每个目标对应的 波束中心穿越时刻 。
-    sita = atan( Vr.*(ta_mtx-nc_target(k).*ones(Naz,Nrg))/x_range(k) );
-    w_azimuth1 = (sinc(0.886.*sita./beta_bw)).^2; 
-    % w_azimuth1是天线双程方向图。
-    % 下面的 w_azimuth2 是和方式2的矩形窗相同的构造方法，目的是：对天线双程
-    % 方向图进行数据限制：限制为 1.135 个合成孔径长度。 
-    w_azimuth2 = (abs(ta - nc_target(k)) <= (1.135*La/2)/Vr);    
-    w_azimuth2 = w_azimuth2.'*ones(1,Nrg);	% 用来对 w_azimuth1 的天线双程方向图作数据限制。
-    % 下面将两者相乘，得到仿真中所用的天线加权
-    w_azimuth = w_azimuth1.*w_azimuth2;     % 两者相乘，得到仿真中所用的天线加权
-    clear w_azimuth1;
-    clear w_azimuth2;
-    %}
-    %
-    % 方式2
-    % 利用合成孔径长度，直接构造矩形窗（其实这里只是限制数据范围，没有真正加窗）
-    w_azimuth = (abs(ta - nc_target(k)) <= (La/2)/Vr);    % 行向量
-    w_azimuth = w_azimuth.'*ones(1,Nrg);    % 生成Naz*Nrg的矩阵
-    %}
+A0 = 1;                     % 目標回波幅度,都設置為1
+for k = 1:3                 % 生成k個目標的原始回波數據
+    R_n = sqrt( (x_range(k).*ones(Naz,Nrg)).^2 + (Vr.*eta_mtx-y_azimuth(k).*ones(Naz,Nrg)).^2 );% 目標k的瞬時斜距(6.2)
+    w_range = ((abs(tau_mtx-2.*R_n./c)) <= ((Tr/2).*ones(Naz,Nrg)));                            % 距離向包络,即距離窗(Range evelope)
+    % ===================================================================================================   
+    % 利用合成孔徑長度,直接構造矩形窗(其實這里只是限制數據範圍,沒有真正加窗）(◕‿◕)?
+    
+    w_azimuth = (abs(eta - nc_target(k)) <= (La/2)/Vr);    % 方位向包络(Azimuth evelope) 
+    w_azimuth = w_azimuth.'*ones(1,Nrg);                   % 生成Naz*Nrg的矩陣
     % =====================================================================     
-    s_k = A0.*w_range.*w_azimuth.*exp(-(1j*4*pi*f0).*R_n./c).*exp((1j*pi*Kr).*(tau_mtx-2.*R_n./c).^2);
-    % 上式就是生成的某一个点目标（目标k）的回波信号。
-    s_echo = s_echo + s_k;  % 所有点目标回波信号之和   
-end
-% s_echo 就是我们需要的原始数据，点目标回波信号。
+    % 下式就是生成某一個點目標(目標k)的回波信號
 
-% 作图
-% 图1——原始数据
-figure;
+    s_k = A0.*w_range.*w_azimuth.*exp(-(1j*4*pi*f0).*R_n./c).*exp((1j*pi*Kr).*(tau_mtx-2.*R_n./c).^2);
+    % 經過幾次循環,生成幾個點目標的回波信號,相加即可
+
+    s_echo = s_echo + s_k;
+end
+
+% --------------------------------------------------------------------------------------------------------
+% Make Figure 1
+% --------------------------------------------------------------------------------------------------------
+% Book Figure 6.3 : Simulated radar signal (raw) data with three target
+% --------------------------------------------------------------------------------------------------------
+figure('Name','Simulated radar signal (raw) data with three target', 'NumberTitle','on'); 
 subplot(2,2,1);
 imagesc(real(s_echo));
-title('（a）实部');
-xlabel('距离时域（采样点）');
-ylabel('方位时域（采样点）');
-text(300,-70,'图1，原始数据');       % 给图1进行文字说明 
-% text 函数：在图像的指定坐标位置，添加文本框
+title('(a) 實部 Real Part');
+xlabel('Range time domain(Samples)');
+ylabel('Azimuth time domain(Samples)');
 
 subplot(2,2,2);
 imagesc(imag(s_echo));
-title('（b）虚部');
-xlabel('距离时域（采样点）');
-ylabel('方位时域（采样点）');
+title('(b) 虚部 Imaginary Part');
+xlabel('Range time domain(Samples)');
+ylabel('Azimuth time domain(Samples)');
 
 subplot(2,2,3);
 imagesc(abs(s_echo));
-title('（c）幅度');
-xlabel('距离时域（采样点）');
-ylabel('方位时域（采样点）');
+title('(c) 強度 Magnitude');
+xlabel('Range time domain(Samples)');
+ylabel('Azimuth time domain(Samples)');
 
 subplot(2,2,4);
 imagesc(angle(s_echo));
-title('（d）相位');
-xlabel('距离时域（采样点）');
-ylabel('方位时域（采样点）');
-% colormap(gray);
+title('(d) 相位 Phase');
+xlabel('Range Time domain(Samples)');
+ylabel('Azimuth time domain(Samples)');
 
 figure;
 subplot(2,2,1);
@@ -203,7 +186,7 @@ title('二维频谱相位');
 % --------------------------------------------------------------------
 % 变换到距离多普勒域，进行“补余RCMC”
 % --------------------------------------------------------------------
-s_rd = s_echo.*exp(-1j*2*pi*fnc.*(ta.'*ones(1,Nrg))); 	% 数据搬移
+s_rd = s_echo.*exp(-1j*2*pi*fnc.*(eta.'*ones(1,Nrg))); 	% 数据搬移
 
 S_RD = fft(s_rd,NFFT_a,1);  % 进行方位向傅里叶变换，得到距离多普勒域频谱
 
