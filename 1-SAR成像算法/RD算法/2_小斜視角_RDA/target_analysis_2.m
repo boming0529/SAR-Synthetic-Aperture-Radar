@@ -36,12 +36,11 @@ function [PSLR_r,ISLR_r,IRW_r, PSLR_a,ISLR_a,IRW_a] = target_analysis_2(s_ac,Fr,
     % 进行二维升采样
     NN = 32;        % 切片总长度，NN*NN
     [row,column] = size(s_ac);      % s_ac的矩阵大小
-    [aa,p] = max(abs(s_ac));           
-    [bb,q] = max(max(abs(s_ac)));
+    [s_ac_column_max,p] = max(abs(s_ac));           
+    [s_ac_max,q] = max(max(abs(s_ac))); % 矩阵最大值是—— x_max。
      
-    row_max = p(q);    	% 二维矩阵最大值，所在第几行—— row_max。
-    column_max = q;     % 二维矩阵最大值，所在第几列—— column_max。
-    s_ac_max = bb;      % 矩阵最大值是—— x_max。
+    row_max = p(q);    	% 二维矩阵最大值，所在第幾列 : row_max。
+    column_max = q;     % 二维矩阵最大值，所在第幾行 : column_max。
     
     s_ac_test = s_ac(row_max-NN/2:row_max+NN/2-1,column_max-NN/2:column_max+NN/2-1);
     % 得到NN*NN的切片
@@ -49,44 +48,58 @@ function [PSLR_r,ISLR_r,IRW_r, PSLR_a,ISLR_a,IRW_a] = target_analysis_2(s_ac,Fr,
     % 下面进行二维升采样
     S_ac_test_1 = fft(s_ac_test,[],1);     % 方位向fft
     S_ac_test_2 = fft(S_ac_test_1,[],2);   % 距离向fft
+
+    figure('Name','32x32 Sac FFT', 'NumberTitle','on'); 
+
+    subplot(1,2,1);
+    imagesc(real(S_ac_test_2));
+    title('(a)實部');
+    xlabel('Range frequency domain(Samples)');
+    ylabel('Azimuth frequency domain(Samples)');
+    
+    subplot(1,2,2);
+    imagesc(abs(S_ac_test_2));
+    title('(b)強度');
+    xlabel('Range frequency domain(Samples)');
+    ylabel('Azimuth frequency domain(Samples)');
     
     % 接下来进行二维补零
     % =========================================================================
     % 利用两个for循环，在每行和每列最小值的位置处补上7*NN的零，实现高频补零。
     %------------------------------------------------------------------
     %{
-    % 第 1 种方法： 先对每行补零，再对每列补零。
+    % 第 1 种方法： 先对每列补零，再对每行补零。
     S_ac_test_buling_1 = zeros(NN,8*NN);  % 中间变量
     S_ac_test_buling = zeros(8*NN,8*NN);
-    % 下面先对每行补零，再对每列补零
+    % 下面先对每列补零，再对每行补零
     for pp = 1:NN           % 在每行的最小值位置补零
         [C,I] = min(S_ac_test_2(pp,:));
         S_ac_test_buling_1(pp,1:I) = S_ac_test_2(pp,1:I);
         S_ac_test_buling_1(pp,8*NN-(NN-I)+1:8*NN) = S_ac_test_2(pp,I+1:NN);
     end
-    % for qq = 1:8*NN         % 在每列的最小值位置补零
+    % for qq = 1:8*NN         % 在每行的最小值位置补零
     %     [C,I] = min(S_ac_test_buling_1(:,qq));
     %     S_ac_test_buling(1:I,qq) = S_ac_test_buling_1(1:I,qq);
     %     S_ac_test_buling(8*NN-(NN-I)+1:8*NN,qq) = S_ac_test_buling_1(I+1:NN,qq);
     % end
-    % 由于上面的在每列的最小值位置补零，得到的结果是有问题的，因此下面进行修改
+    % 由于上面的在每行的最小值位置补零，得到的结果是有问题的，因此下面进行修改
     % 修改方法是：
-    %       直接对每一列，在中间补零
+    %       直接对每一行，在中间补零
     S_ac_test_buling(1:NN/2,:) = S_ac_test_buling_1(1:NN/2,:);
     S_ac_test_buling(8*NN-NN/2+1:8*NN,:) = S_ac_test_buling_1(NN/2+1:NN,:);
     %}
     %------------------------------------------------------------------
     %
-    % 第 2 种方法： 先对每列补零，再对每行补零。
+    % 第 2 种方法： 先对每行补零，再对每列补零。
     S_ac_test_buling_1 = zeros(8*NN,NN);  % 中间变量
     S_ac_test_buling = zeros(8*NN,8*NN);
-    % 下面先对每列补零，再对每行补零——注意：和上面的先行后列相比，这是有区别的。
-    for pp = 1:NN           % 在每行的最小值位置补零
+    % 下面先对每行补零，再对每列补零——注意：和上面的先列后列相比，这是有区别的。
+    for pp = 1:NN           % 在每列的最小值位置补零
         [C,I] = min(S_ac_test_2(:,pp));
         S_ac_test_buling_1(1:I,pp) = S_ac_test_2(1:I,pp);
         S_ac_test_buling_1(8*NN-(NN-I)+1:8*NN,pp) = S_ac_test_2(I+1:NN,pp);
     end
-    for qq = 1:8*NN         % 在每列的最小值位置补零
+    for qq = 1:8*NN         % 在每行的最小值位置补零
         [C,I] = min(S_ac_test_buling_1(qq,:));
         S_ac_test_buling(qq,1:I) = S_ac_test_buling_1(qq,1:I);
         S_ac_test_buling(qq,8*NN-(NN-I)+1:8*NN) = S_ac_test_buling_1(qq,I+1:NN);
@@ -94,13 +107,30 @@ function [PSLR_r,ISLR_r,IRW_r, PSLR_a,ISLR_a,IRW_a] = target_analysis_2(s_ac,Fr,
     %}
     %------------------------------------------------------------------
     % =========================================================================
+
+    figure('Name','x8 zeros padding for FFT', 'NumberTitle','on'); 
+
+    subplot(1,2,1);
+    imagesc(real(S_ac_test_buling));
+    title('(a)實部');
+    xlabel('Range frequency domain(Samples)');
+    ylabel('Azimuth frequency domain(Samples)');
+    
+    subplot(1,2,2);
+    imagesc(abs(S_ac_test_buling));
+    title('(b)強度');
+    xlabel('Range frequency domain(Samples)');
+    ylabel('Azimuth frequency domain(Samples)');
+
     S_ac_test_1 = ifft(S_ac_test_buling,[],2);
     s_ac_test = ifft(S_ac_test_1,[],1);         % 完成二维升采样。
     
     % 作图
-    figure;
+    figure('Name','Taget Contours', 'NumberTitle','on'); 
     imagesc(abs(s_ac_test));
-    title('将成像结果做升采样，看效果如何');
+    title('Contours : upsampling ');
+    xlabel('Range time domain(Samples)');
+    ylabel('Azimuth time domain(Samples)');
     
     %% 
     % 下面分别对点目标中心（二维最大值）做行切片，和列切片。
@@ -153,8 +183,14 @@ function [PSLR_r,ISLR_r,IRW_r, PSLR_a,ISLR_a,IRW_a] = target_analysis_2(s_ac,Fr,
     [bb_test_range,q_test_range] = max(max(abs(s_ac_range)));
     row_test_max_range = p_test_range(q_test_range); % 旋转后，点目标中心，所在第几行
     column_test_max_range = q_test_range;  % 旋转后，点目标中心，所在第几列
-    
-    s_ac_test_row_max = s_ac_range(row_test_max_range,column_test_max_range/3:5*column_test_max_range/3);
+
+    get_column_test_max_range = 5*column_test_max_range/3;
+    [row_r, col_r]= size(s_ac_range)
+    if 5*column_test_max_range/3 > row_r 
+        get_column_test_max_range = row_r;
+    end
+        
+    s_ac_test_row_max = s_ac_range(row_test_max_range,column_test_max_range/3:get_column_test_max_range);
     % s_ac_test_row_max是取出的点目标中心行切片。
     % 其中，这里并没有把s_ac_range的一行全部取出来，而是将最左右两侧的一部分去除了。
     
@@ -226,8 +262,14 @@ function [PSLR_r,ISLR_r,IRW_r, PSLR_a,ISLR_a,IRW_a] = target_analysis_2(s_ac,Fr,
     [bb_test_azimuth,q_test_azimuth] = max(max(abs(s_ac_azimuth)));
     row_test_max_azimuth = p_test_azimuth(q_test_azimuth); % 旋转后，点目标中心，所在第几行
     column_test_max_azimuth = q_test_azimuth;  % 旋转后，点目标中心，所在第几列。
+
+    get_row_test_max_azimuth = 5*row_test_max_azimuth/3 ;
+    [row_a, col_a]= size(s_ac_azimuth)
+    if 5*row_test_max_azimuth/3 > col_a 
+        get_row_test_max_azimuth = col_a;
+    end
     
-    s_ac_test_column_max = s_ac_azimuth(row_test_max_azimuth/3:5*row_test_max_azimuth/3,column_test_max_azimuth);
+    s_ac_test_column_max = s_ac_azimuth(row_test_max_azimuth/3:get_row_test_max_azimuth,column_test_max_azimuth);
     % s_ac_test_column_max是取出的点目标中心列切片。
     % 其中，这里并没有把s_ac_azimuth的一列全部取出来，而是将最上下两侧的一部分去除了。
     s_ac_test_column_max = s_ac_test_column_max.';  % 转为行向量，便于统一处理

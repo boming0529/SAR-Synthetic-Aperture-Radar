@@ -27,8 +27,8 @@ Kr = 20e12;                 % 距離向調频率 (Range FM rate, Hz/sec)
 f0 = 5.3e9;                 % 雷達工作頻率 (Radar center frequency, GHz)
 BW_dop = 80;                % 多普勒带寬   (Doppler bandwidth, Hz)
 Fr = 60e6;                  % 距離採樣率   (Range sampling rate, MHz)
-Fa = 100;                   % 方位採樣率   (Azimuth sampling rate or PRF, HZ)
-Naz = 512;                  % 方位採樣數,即數據矩陣列數(Number of range lines(row))——這裡修改為1024.(◕‿◕)?
+Fa = 200;                   % 方位採樣率   (Azimuth sampling rate or PRF, HZ)——這裡修改為200.(◕‿◕)?
+Naz = 1024;                  % 方位採樣數,即數據矩陣列數(Number of range lines(row))——這裡修改為1024.(◕‿◕)?
 Nrg = 320;                  % 距離採樣數,即數據矩陣行數(Sample per range line(column)）
 sita_r_c = (3.5*pi)/180;	% 波束斜视角,3.5度,這裡轉為弧度(Beam squint angel, rad)
 
@@ -368,4 +368,99 @@ title('目標A,B,C成像');
 xlabel('Range Time domain(Samples)');
 ylabel('Azimuth Time domain(Samples)');    
 
+% --------------------------------------------------------------------------------------------------------
+%  Make Figure 8 : images power
+% --------------------------------------------------------------------------------------------------------
+figure('Name','Image Power', 'NumberTitle', 'on');
+[row, col] = size(s_ac);
+[X, Y] = meshgrid(1:col, 1:row);
+mesh(X, Y, abs(s_ac));
+title('point target A,B,C image power');
+xlabel('Range Time domain(Samples)');
+ylabel('Azimuth Time domain(Samples)');  
+% --------------------------------------------------------------------------------------------------------
+
+
+%%
+% 下面通过调用函数，得到三个点目标各自的切片，并进行升采样
+% 同时对点目标中心做距离向切片，方位向切片
+% 计算出相应的指标：PSLR，ISLR，IRW
+
+NN = 20;
+% 分别得到每个点目标的切片放大；行切片、列切片；和相应的指标
+% 目标1，点目标中心在 （ target_A_azimuth_samples, target_A_range_samples ）
+target_A_azimuth_samples = 96;
+target_A_range_samples = round(N_rg/2);
+% target C 
+% NN = 7;
+% target_A_azimuth_samples = 130;
+% target_A_range_samples = 106;
+
+% --------------------------------------------------------------------------------------------------------
+%  Make Figure 9 : point target C images power
+% --------------------------------------------------------------------------------------------------------
+figure('Name','Image Power', 'NumberTitle', 'on');
+point_target_a_of_s_ac = s_ac(target_A_azimuth_samples-NN:target_A_azimuth_samples+NN,target_A_range_samples-NN:target_A_range_samples+NN); 
+[row_a, col_a] = size(point_target_a_of_s_ac);
+[X_a, Y_a] = meshgrid(1:col_a, 1:row_a);
+mesh(target_A_range_samples-NN+X_a-1, target_A_azimuth_samples-NN+Y_a-1, abs(point_target_a_of_s_ac));
+title('point target A image power');
+xlabel('Range Time domain(Samples)');
+ylabel('Azimuth Time domain(Samples)');  
+% --------------------------------------------------------------------------------------------------------
+
+% target_1 = target_analysis_2( s_ac(target_A_azimuth_samples-NN:target_A_azimuth_samples+NN,target_A_range_samples-NN:target_A_range_samples+NN),Fr,Fa,Vr);
+
+
+
+% 目标B，点目标中心在 （ target_B_azimuth_samples, target_B_range_samples ）
+target_B_azimuth_samples = target_A_azimuth_samples + delta_R1/Vr*Fa;
+target_B_range_samples = target_A_range_samples;
+% target_2 = target_analysis_2( s_ac(target_B_azimuth_samples-NN:target_B_azimuth_samples+NN,target_B_range_samples-NN:target_B_range_samples+NN),Fr,Fa,Vr);
+
+% 目标C，点目标中心在 （ target_C_azimuth_samples, target_C_range_samples ）
+target_C_azimuth_samples = target_B_azimuth_samples + delta_R2*tan(sita_r_c)/Vr*Fa;
+target_C_azimuth_samples = fix(target_C_azimuth_samples);
+target_C_range_samples = target_B_range_samples + 2*delta_R2/c*Fr;
+
+% --------------------------------------------------------------------------------------------------------
+%  Make Figure 10 : Expanded Target C
+% --------------------------------------------------------------------------------------------------------
+chip_size = 8
+figure('Name','Expanded Target C', 'NumberTitle', 'on');
+expanded_target_c_of_s_ac = s_ac(target_C_azimuth_samples-chip_size:target_C_azimuth_samples+chip_size,target_C_range_samples-chip_size:target_C_range_samples+chip_size); 
+imagesc(abs(expanded_target_c_of_s_ac));
+title('expanded target C image power');
+xlabel('Range Time domain(Samples)');
+ylabel('Azimuth Time domain(Samples)');  
+% --------------------------------------------------------------------------------------------------------
+
+
+% --------------------------------------------------------------------------------------------------------
+%  Make Figure 10 : Expanded Target C (3D)
+% --------------------------------------------------------------------------------------------------------
+chip_size = 8
+figure('Name','Expanded Target C (3D)', 'NumberTitle', 'on');
+expanded_target_c_of_s_ac = s_ac(target_C_azimuth_samples-chip_size:target_C_azimuth_samples+chip_size,target_C_range_samples-chip_size:target_C_range_samples+chip_size); 
+[row_expanded_c, col_expanded_c] = size(expanded_target_c_of_s_ac);
+[X_expanded_c, Y_expanded_c] = meshgrid(1:col_expanded_c, 1:row_expanded_c);
+mesh(target_C_range_samples-chip_size+ X_expanded_c -1, target_C_azimuth_samples-chip_size+Y_expanded_c -1, abs(expanded_target_c_of_s_ac));
+title('expanded target C image power');
+xlabel('Range Time domain(Samples)');
+ylabel('Azimuth Time domain(Samples)');  
+% --------------------------------------------------------------------------------------------------------
+
+target_3 = target_analysis_2( s_ac(target_C_azimuth_samples-NN:target_C_azimuth_samples+NN,target_C_range_samples-NN:target_C_range_samples+NN),Fr,Fa,Vr);
+
+% --------------------------------------------------------------------------------------------------------
+%  Make Figure 11 : point target C images power
+% --------------------------------------------------------------------------------------------------------
+figure('Name','Image Power', 'NumberTitle', 'on');
+point_target_c_of_s_ac = s_ac(target_C_azimuth_samples-NN:target_C_azimuth_samples+NN,target_C_range_samples-NN:target_C_range_samples+NN); 
+[row_c, col_c] = size(point_target_c_of_s_ac);
+[X_c, Y_c] = meshgrid(1:col_c, 1:row_c);
+mesh(target_C_range_samples-NN+ X_c -1, target_C_azimuth_samples-NN+Y_c -1, abs(point_target_c_of_s_ac));
+title('point target C image power');
+xlabel('Range Time domain(Samples)');
+ylabel('Azimuth Time domain(Samples)');  
 % --------------------------------------------------------------------------------------------------------
