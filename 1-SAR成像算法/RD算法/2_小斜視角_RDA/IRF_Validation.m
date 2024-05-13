@@ -1,8 +1,8 @@
-function [PSLR,ISLR,IRW] = zhibiao_2(x,s_number,T)
+function [PSLR,ISLR,IRW] = IRF_Validation(x,s_number,T)
     %
-    % 针对函数 zhibiao(x,s_number,T) 进行改进，改进的内容主要为：
+    % 针对函数 IRF_Validation(x,s_number,T) 进行改进，改进的内容主要为：
     % 在计算3dB点所对应的坐标时——用来计算 分辨率（IRW）
-    % 函数 zhibiao() 中采用的是临近取整的办法，这不准确。
+    % 函数 IRF_Validation() 中采用的是临近取整的办法，这不准确。
     % 下面利用的方法是将离 3dB 最近的两个点进行线性插值，来得到更准确的3dB点所对应的坐标。
     %
     % 输入变量：信号x，采样点数 s_number，T是信号的时域长度。
@@ -31,6 +31,18 @@ function [PSLR,ISLR,IRW] = zhibiao_2(x,s_number,T)
     [D_left,Q_left] = max(soo_abs(1,1:P1));     % 最大旁瓣，值为 D_left，位置为 Q_left。（左边的那一个）。
     [D_right,Q_right] = max(soo_abs(1,P2:end)); % 最大旁瓣，值为 D_right，位置为 Q_right。（右边的那一个）。
     D = max(D_left,D_right);    % 比较左边和右边两者中的最大值，得到两侧旁瓣中最大的旁瓣，值为 D。
+
+
+    disp('=======')
+    disp(' Main Lobe Value | Main Lobe Position ')
+    disp([sprintf('%f', C), ' | ' ,sprintf('%d', I)])
+    disp(' Side Lobe Value (Left) | Side Lobe Position (Left)')
+    disp([sprintf('%f', D_left), ' | ', sprintf('%d', Q_left)])
+    disp(' Side Lobe Value (Right) | Side Lobe Position (Right)')
+    disp([sprintf('%f', D_right), ' | ', sprintf('%d', P2 + Q_right)])
+    disp('=======')
+
+
     
     PSLR = 20*log10(D/C);                       % 峰值旁瓣比
     ISLR = 10*log10((sum(y(1,P1/20:P1))+sum(y(1,P2:end)))/sum(y(1,P1:P2)));% 积分旁瓣比。
