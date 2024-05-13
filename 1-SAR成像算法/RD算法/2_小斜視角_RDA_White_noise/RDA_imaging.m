@@ -152,6 +152,46 @@ title('(d) 相位 Phase');
 xlabel('Range Time domain(Samples)');
 ylabel('Azimuth time domain(Samples)');
 
+figure('Name','3d raw data', 'NumberTitle','on'); 
+[row_s_echo, col_s_echo] = size(s_echo);
+[X_s_echo, Y_s_echo] = meshgrid(1:col_s_echo, 1:row_s_echo);
+mesh(X_s_echo, Y_s_echo, abs(s_echo));
+title('3d raw data');
+xlabel('Range time domain(Samples)');
+ylabel('Azimuth frequency domain(Samples)');   
+
+% --------------------------------------------------------------------------------------------------------
+% White Note
+% --------------------------------------------------------------------------------------------------------
+
+% 均值和標準差
+mu = 0;           % 均值
+sigma = 1;        % 標準差
+
+% 生成 2-D 高斯白噪音
+noise = mu + sigma * randn(Naz, Nrg);
+
+figure('Name','3d noise', 'NumberTitle','on'); 
+[row_noise, col_noise] = size(noise);
+[X_noise, Y_noise] = meshgrid(1:col_noise, 1:row_noise);
+mesh(X_noise, Y_noise, abs(noise));
+title('3d noise');
+xlabel('Range time domain(Samples)');
+ylabel('Azimuth frequency domain(Samples)');  
+
+
+figure('Name','3d echo + noise', 'NumberTitle','on'); 
+[row_s_echo_noise, col_s_echo_noise] = size(s_echo + noise);
+[X_s_echo_noise, Y_s_echo_noise] = meshgrid(1:col_s_echo_noise, 1:row_s_echo_noise);
+mesh(X_s_echo_noise, Y_s_echo_noise, abs(s_echo + noise));
+title('3d noise');
+xlabel('Range time domain(Samples)');
+ylabel('Azimuth frequency domain(Samples)');  
+
+
+s_echo = s_echo + noise;
+
+
 %%
 % --------------------------------------------------------------------------------------------------------
 % 6.3.2 Range Compression
