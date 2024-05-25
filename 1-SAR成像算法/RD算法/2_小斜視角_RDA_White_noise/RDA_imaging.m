@@ -1,3 +1,4 @@
+%% 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %            小斜視角（3.5°）
 %                RDA
@@ -174,7 +175,7 @@ noise = mu + sigma * randn(Naz, Nrg);
 figure('Name','3d noise', 'NumberTitle','on'); 
 [row_noise, col_noise] = size(noise);
 [X_noise, Y_noise] = meshgrid(1:col_noise, 1:row_noise);
-mesh(X_noise, Y_noise, abs(noise));
+mesh(X_noise, Y_noise, noise);
 title('3d noise');
 xlabel('Range time domain(Samples)');
 ylabel('Azimuth frequency domain(Samples)');  
@@ -183,7 +184,7 @@ ylabel('Azimuth frequency domain(Samples)');
 figure('Name','3d echo + noise', 'NumberTitle','on'); 
 [row_s_echo_noise, col_s_echo_noise] = size(s_echo + noise);
 [X_s_echo_noise, Y_s_echo_noise] = meshgrid(1:col_s_echo_noise, 1:row_s_echo_noise);
-mesh(X_s_echo_noise, Y_s_echo_noise, abs(s_echo + noise));
+mesh(X_s_echo_noise, Y_s_echo_noise, abs(s_echo) + noise);
 title('3d noise');
 xlabel('Range time domain(Samples)');
 ylabel('Azimuth frequency domain(Samples)');  
