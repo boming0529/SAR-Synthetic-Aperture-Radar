@@ -367,11 +367,41 @@ function [PSLR_r,ISLR_r,IRW_r, PSLR_a,ISLR_a,IRW_a] = target_analysis_2(s_ac,Fr,
     s_ac_azimuth = imrotate(s_ac_test,azimuth_theta,'bilinear');% 采用'bilinear'，双线性插值的方式
     % s_ac_azimuth是旋转后的图像
     % 方位向切片就以此来计算。
+
+    % skew
+    disp('range theta');
+    disp(range_theta);
+    disp('azimuth theta');
+    disp(azimuth_theta);
+    shear_x = tand( - range_theta );
+    shear_y = tand( azimuth_theta );
+
+    tform = affine2d([1 shear_x 0; shear_y 1 0; 0 0 1]);
+    corrected_img = imwarp(s_ac_test, tform);
+
+    figure('Name','skew', 'NumberTitle','on'); 
+    imagesc(abs(corrected_img));
+    title('Cross Section');
+    xlabel('Range Time domain(Samples)');
+    ylabel('Azimuth Time domain(Samples)');  
+    colorbar
+
+    figure('Name','skew (3D)', 'NumberTitle', 'on');
+    [row_cor, column_cor] = size(corrected_img);
+    [X_column_cor, Y_column_cor] = meshgrid(0:column_cor-1, 0:row_cor-1);
+    mesh(X_column_cor , Y_column_cor , abs(corrected_img));
+    title('skew (3D)');
+    xlabel('Range Time domain(Samples)');
+    ylabel('Azimuth Time domain(Samples)');  
+    colorbar
     
     % 作图
     figure;
     imagesc(abs(s_ac_azimuth));
     title('将方位向旁瓣旋转到平行于垂直轴后的成像结果');
+    title('(Azimuth) rotation upsampling');
+    xlabel('Range Time domain(Samples)');
+    ylabel('Azimuth Time domain(Samples)');
     
     % 第五步，找出旋转后的最大值中心，并取出相应的列切片
     [aa_test_azimuth,p_test_azimuth] = max(abs(s_ac_azimuth));           
