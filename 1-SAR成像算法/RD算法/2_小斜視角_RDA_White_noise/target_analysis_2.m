@@ -378,7 +378,7 @@ function [PSLR_r,ISLR_r,IRW_r, PSLR_a,ISLR_a,IRW_a] = target_analysis_2(s_ac,Fr,
     disp(range_theta);
     disp('azimuth theta');
     disp(azimuth_theta);
-    shear_x = tand(- range_theta );
+    shear_x = tand( - range_theta );
     shear_y = tand( azimuth_theta );
 
     tform = affine2d([1 shear_x 0; shear_y 1 0; 0 0 1]);
@@ -386,7 +386,10 @@ function [PSLR_r,ISLR_r,IRW_r, PSLR_a,ISLR_a,IRW_a] = target_analysis_2(s_ac,Fr,
 
     figure('Name','skew', 'NumberTitle','on'); 
     imagesc(abs(corrected_img));
-    title('校正後圖像');
+    title('Cross Section');
+    xlabel('Range Time domain(Samples)');
+    ylabel('Azimuth Time domain(Samples)');  
+    colorbar
 
     figure('Name','skew (3D)', 'NumberTitle', 'on');
     [row_cor, column_cor] = size(corrected_img);
@@ -395,6 +398,13 @@ function [PSLR_r,ISLR_r,IRW_r, PSLR_a,ISLR_a,IRW_a] = target_analysis_2(s_ac,Fr,
     title('skew (3D)');
     xlabel('Range Time domain(Samples)');
     ylabel('Azimuth Time domain(Samples)');  
+    colorbar
+
+
+    %%
+    % Save the DN matrix to a .mat file
+    save('corss_section.mat', 'corrected_img');
+    %%
     
     % 第五步，找出旋转后的最大值中心，并取出相应的列切片
     [aa_test_azimuth,p_test_azimuth] = max(abs(s_ac_azimuth));           
